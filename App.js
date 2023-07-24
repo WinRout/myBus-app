@@ -12,7 +12,6 @@ export default function App() {
   const [lineInfo, setLineInfo] = useState([])
   const [linecode, setLinecode] = useState(null)
   const [routecode, setRoutecode] = useState(null)
-  const [stops, setStops] = useState([])
   const [stopcode, setStopcode] = useState(null)
 
   const avatar = 'https://www.dailythess.gr/wp-content/uploads/2019/08/koulis-gkrimatses.jpg'
@@ -150,7 +149,7 @@ export default function App() {
           sendMessage([ 
             {
               _id: Math.random(),
-              text: `Το λεωφορείο σου δεν έχει ξεκινήσει ακόμα...`,
+              text: `Φαίνεται να μην έρχεται κανένα λεωφορείο σε αυτή την στάση...`,
               createdAt: new Date(),
               quickReplies: {
                 type: 'radio',
@@ -168,29 +167,60 @@ export default function App() {
         }
         console.log(data)
         let minutes = []
+        let isComing = false
         data.forEach(element => {
+          console.log(routecode)
           if (element.route_code == routecode) {
+            isComing = true
             minutes.push(element.btime2)
-          }
+            console.log(minutes)
+            let minutesStr = []
+            minutes.forEach((element) => {
+              minutesStr.push(` ${element}'`)
+            })
+            console.log(minutesStr)
+            sendMessage([ 
+              {
+                _id: Math.random(),
+                text: `Το λεωφορείο σου έρχεται σε${minutesStr}`,
+                createdAt: new Date(),
+                quickReplies: {
+                  type: 'radio',
+                  keepIt: false,
+                  values: [{title: 'Από την αρχή', value: 'restart'}]
+                },
+                user: {
+                  _id: 2,
+                  name: 'myBus',
+                  avatar: avatar,
+                },
+              },
+            ])
+            return ('time')
+          } 
         })
-        sendMessage([ 
-          {
-            _id: Math.random(),
-            text: `Το λεωφορείο σου έρχεται σε ${minutes}'`,
-            createdAt: new Date(),
-            quickReplies: {
-              type: 'radio',
-              keepIt: false,
-              values: [{title: 'Από την αρχή', value: 'restart'}]
+
+        if (!isComing) {
+          sendMessage([ 
+            {
+              _id: Math.random(),
+              text: `Το λεωφορείο σου δεν έχει ξεκινήσει ακόμα...`,
+              createdAt: new Date(),
+              quickReplies: {
+                type: 'radio',
+                keepIt: false,
+                values: [{title: 'Από την αρχή', value: 'restart'}]
+              },
+              user: {
+                _id: 2,
+                name: 'myBus',
+                avatar: avatar,
+              },
             },
-            user: {
-              _id: 2,
-              name: 'myBus',
-              avatar: avatar,
-            },
-          },
-        ])
-        return ('time')
+          ])
+          return ('time')
+        }
+        
       })
   } catch(error) {
     console.log(error)
@@ -204,62 +234,64 @@ export default function App() {
 
 
   const onSend = (messages = []) => {
-    print(fun)
-
     sendMessage(messages)
+    setLinecode(null)
+    setRoutecode(null)
+    setStopcode(null)
+    setFun('bus')
+    
+    
+    const lineID = latinToGreek(messages[0].text)
 
-    if (fun == 'bus') {
-      const lineID = latinToGreek(messages[0].text)
+    console.log(lineID)
+    
+    const lineArr = lineInfo._j
+    
+    let linefound = false
 
-      console.log(lineID)
-      
-      const lineArr = lineInfo._j
-      
-      let linefound = false
+    try {
+      lineArr.forEach(element => {
+        if (element.LineID == lineID) {
+          linefound = true
 
-      try {
-        lineArr.forEach(element => {
-          if (element.LineID == lineID) {
-            linefound = true
-
-            sendMessage([ 
-                {
-                  _id: Math.random(),
-                  text: 'Τέλεια!',
-                  createdAt: new Date(),
-                  user: {
-                    _id: 2,
-                    name: 'myBus',
-                    avatar: avatar,
-                  },
+          sendMessage([ 
+              {
+                _id: Math.random(),
+                text: 'Τέλεια!',
+                createdAt: new Date(),
+                user: {
+                  _id: 2,
+                  name: 'myBus',
+                  avatar: avatar,
                 },
-              ])
-              throw ({message: 'line found', linecode: element.LineCode})
-          } 
-        });
-        if (!linefound) {
+              },
+            ])
+            throw ({message: 'line found', linecode: element.LineCode})
+        } 
+      });
+      if (!linefound) {
 
-              sendMessage([
-                {
-                  _id: Math.random(),
-                  text: 'Συγγνώμη αλλά δεν μπόρεσα να βρω αυτή την γραμμή. Ξαναπροσπάθησε.',
-                  createdAt: new Date(),
-                  user: {
-                    _id: 2,
-                    name: 'myBus',
-                    avatar: avatar,
-                  },
+            sendMessage([
+              {
+                _id: Math.random(),
+                text: 'Συγγνώμη αλλά δεν μπόρεσα να βρω αυτή την γραμμή. Ξαναπροσπάθησε.',
+                createdAt: new Date(),
+                user: {
+                  _id: 2,
+                  name: 'myBus',
+                  avatar: avatar,
                 },
-              ])
-          }
-      } catch (event) {
+              },
+            ])
+        }
+    } catch (event) {
 
-        console.log(event.message, ': ', event.linecode)
-        setLinecode(event.linecode)
-        
-        
-      }
+      console.log(event.message, ': ', event.linecode)
+      setLinecode(event.linecode)
+      
+      
     }
+    
     
   }
 
@@ -289,6 +321,9 @@ export default function App() {
             },
           },
         ])
+        setLinecode(null)
+        setRoutecode(null)
+        setStopcode(null)
         return 'bus'
       })
     } else if (fun._j=='routecode') {
