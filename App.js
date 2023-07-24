@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import React, { useState, useCallback, useEffect } from 'react'
 
@@ -13,17 +12,22 @@ export default function App() {
   const [linecode, setLinecode] = useState(null)
   const [routecode, setRoutecode] = useState(null)
   const [stopcode, setStopcode] = useState(null)
+  const [rerender, setRerender] = useState(0)
+  const [stopsGl, setStopsGl] = useState([])
+  const [routesGl, setRoutesGl] = useState([])
 
   const avatar = 'https://www.dailythess.gr/wp-content/uploads/2019/08/koulis-gkrimatses.jpg'
 
+  const restart_option = {title: 'Πάμε ξανά🚍', value: 'restart'}
 
 
 
   useEffect(() => {
     setMessages([
+      
       {
-        _id: 1,
-        text: 'Γεια! Ποιό λεωφορείο θες να πάρεις;',
+        _id: 2,
+        text: 'Ποιο λεωφορείο θες να πάρεις;',
         createdAt: new Date(),
         user: {
           _id: 2,
@@ -31,9 +35,18 @@ export default function App() {
           avatar: avatar,
         },
       },
+      {
+        _id: 1,
+        text: ' Ρε Κούλη, πότε θα έρθει το λεωφορείο;',
+        createdAt: new Date(),
+        user: {
+          _id: 1,
+        },
+      },
     ])
     setLineInfo(async () => await getLineInfo())
   }, [])
+
 
   const sendMessage = useCallback((messages = []) => {
     setMessages(previousMessages =>
@@ -60,7 +73,8 @@ export default function App() {
         data.forEach(element => {
           routes.push({title: element.RouteDescr, value: element.RouteCode})
         })
-        routes.push({title: 'Από την αρχή', value: 'restart'})
+        routes.push(restart_option)
+        setRoutesGl(routes)
         console.log(routes)
         sendMessage([ 
           {
@@ -101,21 +115,22 @@ export default function App() {
         console.log(routecode)
         const data = await getStops(routecode)
         console.log(data)
-        let routes = []
+        let stops = []
         data.forEach(element => {
-          routes.push({title: element.StopDescr, value: element.StopCode})
+          stops.push({title: element.StopDescr, value: element.StopCode})
         })
-        routes.push({title: 'Από την αρχή', value: 'restart'})
-        console.log(routes)
+        stops.push(restart_option)
+        setStopsGl(stops)
+        console.log(stops)
         sendMessage([ 
           {
             _id: Math.random(),
-            text: 'Από ποιά στάση θες να πάρεις το λεωφορείο;',
+            text: 'Από ποια στάση θες να πάρεις το λεωφορείο;',
             createdAt: new Date(),
             quickReplies: {
               type: 'radio',
               keepIt: false,
-              values: routes 
+              values: stops
             },
             user: {
               _id: 2,
@@ -137,8 +152,15 @@ export default function App() {
 
   useEffect(() => {
     try {
+      if (rerender == null) {
+        setRerender(false)
+        throw new Error('rerender null')
+      }
       if (stopcode == null) {
         throw new Error('stopcode null')
+      }
+      if (rerender == 0) {
+        throw new Error('rerender 0')
       }
 
       setFun( async () => {
@@ -150,11 +172,12 @@ export default function App() {
             {
               _id: Math.random(),
               text: `Φαίνεται να μην έρχεται κανένα λεωφορείο σε αυτή την στάση...`,
+              image: 'https://media.tenor.com/1TW5q7gVlwkAAAAC/mitsotakis-koulis.gif',
               createdAt: new Date(),
               quickReplies: {
                 type: 'radio',
                 keepIt: false,
-                values: [{title: 'Από την αρχή', value: 'restart'}] 
+                values: [restart_option] 
               },
               user: {
                 _id: 2,
@@ -167,40 +190,41 @@ export default function App() {
         }
         console.log(data)
         let minutes = []
+        let minutesStr = []
         let isComing = false
         data.forEach(element => {
           console.log(routecode)
           if (element.route_code == routecode) {
             isComing = true
             minutes.push(element.btime2)
-            console.log(minutes)
-            let minutesStr = []
-            minutes.forEach((element) => {
-              minutesStr.push(` ${element}'`)
-            })
-            console.log(minutesStr)
-            sendMessage([ 
-              {
-                _id: Math.random(),
-                text: `Το λεωφορείο σου έρχεται σε${minutesStr}`,
-                createdAt: new Date(),
-                quickReplies: {
-                  type: 'radio',
-                  keepIt: false,
-                  values: [{title: 'Από την αρχή', value: 'restart'}]
-                },
-                user: {
-                  _id: 2,
-                  name: 'myBus',
-                  avatar: avatar,
-                },
-              },
-            ])
-            return ('time')
+            console.log(minutes) 
           } 
         })
+        if (isComing) {
+          minutes.forEach((element) => {
+            minutesStr.push(` ${element}'`)
+          })
+          sendMessage([
+            {
+              _id: Math.random(),
+              text: `Το λεωφορείο σου έρχεται σε${minutesStr}`,
+              createdAt: new Date(),
+              quickReplies: {
+                type: 'radio',
+                keepIt: false,
+                values: [{title: 'Ανανέωση🔃', value: 'again'}, restart_option]
+              },
+              user: {
+                _id: 2,
+                name: 'myBus',
+                avatar: avatar,
+              },
+            },
+          ])
+          return ('time')
+        }
 
-        if (!isComing) {
+        else {
           sendMessage([ 
             {
               _id: Math.random(),
@@ -209,7 +233,7 @@ export default function App() {
               quickReplies: {
                 type: 'radio',
                 keepIt: false,
-                values: [{title: 'Από την αρχή', value: 'restart'}]
+                values: [restart_option]
               },
               user: {
                 _id: 2,
@@ -225,77 +249,141 @@ export default function App() {
   } catch(error) {
     console.log(error)
   }
+  console.log('rerener: ', rerender)
 
-  }, [stopcode])
-
-
+  }, [stopcode, rerender])
 
 
 
 
   const onSend = (messages = []) => {
-    sendMessage(messages)
-    setLinecode(null)
-    setRoutecode(null)
-    setStopcode(null)
-    setFun('bus')
-    
-    
-    const lineID = latinToGreek(messages[0].text)
+    console.log('fun: ', fun)
+    sendMessage([
+      {
+        _id: Math.random(),
+        text: messages[0].text,
+        createdAt: new Date(),
+        user: {
+          _id: 1
+        },
+      },
+    ])
+    if (fun=='bus') {
 
-    console.log(lineID)
-    
-    const lineArr = lineInfo._j
-    
-    let linefound = false
+      const lineID = latinToGreek(messages[0].text)
 
-    try {
-      lineArr.forEach(element => {
-        if (element.LineID == lineID) {
-          linefound = true
-
-          sendMessage([ 
-              {
-                _id: Math.random(),
-                text: 'Τέλεια!',
-                createdAt: new Date(),
-                user: {
-                  _id: 2,
-                  name: 'myBus',
-                  avatar: avatar,
-                },
-              },
-            ])
-            throw ({message: 'line found', linecode: element.LineCode})
-        } 
-      });
-      if (!linefound) {
-
-            sendMessage([
-              {
-                _id: Math.random(),
-                text: 'Συγγνώμη αλλά δεν μπόρεσα να βρω αυτή την γραμμή. Ξαναπροσπάθησε.',
-                createdAt: new Date(),
-                user: {
-                  _id: 2,
-                  name: 'myBus',
-                  avatar: avatar,
-                },
-              },
-            ])
-        }
-    } catch (event) {
-
-      console.log(event.message, ': ', event.linecode)
-      setLinecode(event.linecode)
+      console.log(lineID)
       
+      const lineArr = lineInfo._j
       
+      let linefound = false
+
+      try {
+        lineArr.forEach(element => {
+          if (element.LineID == lineID) {
+            linefound = true
+            setFun('linecode')
+            sendMessage([ 
+                {
+                  _id: Math.random(),
+                  text: 'Τέλεια!',
+                  createdAt: new Date(),
+                  user: {
+                    _id: 2,
+                    name: 'myBus',
+                    avatar: avatar,
+                  },
+                },
+              ])
+              throw ({message: 'line found', linecode: element.LineCode})
+          } 
+        });
+        if (!linefound) {
+
+              sendMessage([
+                {
+                  _id: Math.random(),
+                  text: 'Συγγνώμη αλλά δεν μπόρεσα να βρω αυτή την γραμμή. Ξαναπροσπάθησε.',
+                  createdAt: new Date(),
+                  user: {
+                    _id: 2,
+                    name: 'myBus',
+                    avatar: avatar,
+                  },
+                },
+              ])
+
+          }
+      } catch (event) {
+
+        console.log(event.message, ': ', event.linecode)
+        setLinecode(event.linecode)
+      }  
+
     }
-    
-    
+
+    if (fun._j == 'routecode') {
+      sendMessage([ 
+        {
+          _id: Math.random(),
+          text: 'Πρέπει να επιλέξεις μία επιλογή από τις παρακάτω.',
+          createdAt: new Date(),
+          quickReplies: {
+            type: 'radio',
+            keepIt: false,
+            values: routesGl
+          },
+          user: {
+            _id: 2,
+            name: 'myBus',
+            avatar: avatar,
+          },
+        },
+      ])
+    }
+    if (fun._j == 'stopcode') {
+      stopName = latinToGreek(messages[0].text.toUpperCase())
+      let foundStop = false
+      stopsGl.forEach(element => {
+        if (element.title == stopName) {
+          foundStop = true
+          console.log(element.title, element.value)
+          setStopcode( () => {
+            setRerender(1)
+            return element.value
+          })
+        }
+      });
+      if (!foundStop) {
+        sendMessage([ 
+          {
+            _id: Math.random(),
+            text: 'Πρέπει να επιλέξεις μία επιλογή από τις παρακάτω.',
+            createdAt: new Date(),
+            quickReplies: {
+              type: 'radio',
+              keepIt: false,
+              values: stopsGl
+            },
+            user: {
+              _id: 2,
+              name: 'myBus',
+              avatar: avatar,
+            },
+          },
+        ])
+      }
+    }
+    if(fun._j == 'time') {
+      setRerender(prev => prev+1)
+    }
   }
 
+
+
+
   const onQuickReply = (quickReply) => {
+    console.log('fun: ', fun._j)
     console.log(quickReply[0])
     sendMessage([
       {
@@ -303,7 +391,7 @@ export default function App() {
         text: quickReply[0].title,
         createdAt: new Date(),
         user: {
-          _id: 1,
+          _id: 1
         },
       },
     ])
@@ -324,6 +412,9 @@ export default function App() {
         setLinecode(null)
         setRoutecode(null)
         setStopcode(null)
+        setRerender(0)
+        setStopsGl([])
+        setRoutesGl([])
         return 'bus'
       })
     } else if (fun._j=='routecode') {
@@ -331,28 +422,33 @@ export default function App() {
         setRoutecode(quickReply[0].value)
     } else if (fun._j=='stopcode') {
         console.log('stopCode:', quickReply[0].value);
-        setStopcode(quickReply[0].value)
+        setStopcode( () => {
+          setRerender(1)
+          return quickReply[0].value
+        })
+    } else if (fun._j == 'time') {
+      setRerender(prev => prev+1)
     }
-  }
+  } 
 
   return (
-        <View style={styles.container}>
+    <View style={styles.container}>
+          
           <View style={styles.header}>
-            <Text style={styles.headerText}>Πότε θα έρθει το λεωφορείο ρε Κούλη?</Text>
+            <Text style={styles.headerText}>Κούλης</Text>
           </View>
           <GiftedChat
-          messages={messages}
-          onSend={messages => onSend(messages)}
-          onQuickReply={quickReply => onQuickReply(quickReply)}
-          user={{
-            _id: 1,
-          }}
+            listViewProps={{
+              keyboardDismissMode: "on-drag"
+            }}
+            messages={messages}
+            onSend={messages => onSend(messages)}
+            onQuickReply={quickReply => onQuickReply(quickReply)}
+            user={{
+              _id: 1
+            }}
           />
         </View>
-        
-   
-
-    
   )
 }
 
@@ -363,13 +459,14 @@ const styles = StyleSheet.create({
     gap: 0
   },
   header: {
-    height: 80,
-    backgroundColor: 'gray',
+    height: 70,
+    backgroundColor: 'rgba(200, 200, 200, 0.2)',
     justifyContent: 'flex-end',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingBottom: 10,
+    paddingLeft: 20,
   },
   headerText: {
-    paddingBottom: 20,
     fontSize: 20,
     fontWeight: 700
 
