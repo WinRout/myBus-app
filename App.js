@@ -301,16 +301,20 @@ export default function App() {
   }
 
   return (
-    
- 
-        <GiftedChat
-        messages={messages}
-        onSend={messages => onSend(messages)}
-        onQuickReply={quickReply => onQuickReply(quickReply)}
-        user={{
-          _id: 1,
-        }}
-        />
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Πότε θα έρθει το λεωφορείο ρε Κούλη?</Text>
+          </View>
+          <GiftedChat
+          messages={messages}
+          onSend={messages => onSend(messages)}
+          onQuickReply={quickReply => onQuickReply(quickReply)}
+          user={{
+            _id: 1,
+          }}
+          />
+        </View>
+        
    
 
     
@@ -321,7 +325,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 0
   },
+  header: {
+    height: 80,
+    backgroundColor: 'gray',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  headerText: {
+    paddingBottom: 20,
+    fontSize: 20,
+    fontWeight: 700
+
+  }
 });
